@@ -1,5 +1,14 @@
 #game-grid{
-    width: 80vh;
-    height: 95vh;
+    width: 600px;
+    height: 700px;
     background-color: black;
+    border: solid 5px red;
+    float: left;
+}
+
+#piece{
+    width: 200px;
+    height: 300px;
+    float: right;
+    border: 2px yellow solid;
 }
