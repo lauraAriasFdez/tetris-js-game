@@ -81,45 +81,53 @@ class Person{
     drawNextBlock(nextBlockBrush,nextBlock);
 
     
-    
-    
-    //Event listner
-   document.addEventListener("keydown",function(event){
-       event = event.key;
-       //update pastPosition
-       switch(event){
-           case "ArrowRight":
-               console.log(tetris.width);
-               moveRight();
-               break;
-            case "ArrowLeft":
-                moveLeft();
-                break;
-            case "ArrowUp":
-                rotate();
-                break;
-            case "ArrowDown":
-                if (checkBlock())
-                    moveDown();
-                else{
-                    console.log(player.block,player.position);
-                    gridObjects. push ([player.block,player.position]);
-                    //generate a random block
-                    player.setBlock(nextBlock);
-                    nextBlock = blockElements[Math.floor(Math.random() * blockElements.length)];
-                    drawNextBlock(nextBlockBrush,nextBlock);
-                }
-                break;
-       }
-   });
+    /*check available to move*/
+    function checkCollision (){
+       return false;
+    }
+    function leftAllowed(){
+        if (checkCollision())
+             return false;
+         else if (player.position[0]<=20 && player.position[0] >=1)
+             return true;
+         else{
+            let colLeft1 = [player.block.matrix[0][0],player.block.matrix[1][0],player.block.matrix[2][0],player.block.matrix[3][0]];
+            let colLeft2 = [player.block.matrix[0][1],player.block.matrix[1][1],player.block.matrix[2][1],player.block.matrix[3][1]];
 
+            if (player.position[0]==0 && !colLeft1.includes(1))
+                return true;
+            else if (player.position[0]==-1 && !colLeft2.includes(1))
+                return true;
+            return false;
+         }
+    }
+    
+    function rigthAllowed(){
+        if (checkCollision())
+            return false;
+        else if (player.position[0]<=15 && player.position[0] >=-1)
+            return true;
+        else {
+            let colRight1 = [player.block.matrix[0][3],player.block.matrix[1][3],player.block.matrix[2][3],player.block.matrix[3][3]];
+            let colRight2 = [player.block.matrix[0][2],player.block.matrix[1][2],player.block.matrix[2][2],player.block.matrix[3][2]];
+            if (player.position[0]==16 && !colRight1.includes(1))
+                return true;
+            else if (player.position[0]==17 && !colRight2.includes(1))
+                return true;
+            return false;
+        }
+    }
+    
+       /*if postion [-1,19] and check columns that are not 0,0,0,0 and postion -2,20*/
    function moveDown(){
-        player.setPosition(player.position[0],player.position[1]+1);
-   }
-   function moveLeft(){
-    player.setPosition(player.position[0]-1,player.position[1]);
-   }
-   function moveRight(){
+    player.setPosition(player.position[0],player.position[1]+1);
+    }
+    
+    function moveLeft(){
+        player.setPosition(player.position[0]-1,player.position[1]);
+
+    }
+    function moveRight(){
         player.setPosition(player.position[0]+1,player.position[1]);
     }
 
@@ -137,8 +145,8 @@ class Person{
                 }
                 newgrid.push(row);
             } 
-             //mutate block grid
-             player.block.matrix = newgrid;
+            //mutate block grid
+            player.block.matrix = newgrid;
 
         } else if (player.block.color!=="yellow"){
             // matrix N x N rotation but ignoring last col and top row which is always [0,0,0,0]
@@ -146,18 +154,64 @@ class Person{
             for (var j=0; j<grid.length-1; j++){
                 let i =grid.length-1;
                 let row = [];
-                while (i>=0){
+                while (i>0){
                     row.push(grid[i][j]);
                     i--;
                 }
                 row.push(0);
                 newgrid.push(row);
             } 
-            //mutate block grid
             player.block.matrix = newgrid;
         }
-        
+
+        //check if rotate moves block outside the grid on the left or right
+        let colLeft1 = [player.block.matrix[0][0],player.block.matrix[1][0],player.block.matrix[2][0],player.block.matrix[3][0]];
+        let colLeft2 = [player.block.matrix[0][1],player.block.matrix[1][1],player.block.matrix[2][1],player.block.matrix[3][1]];
+        let colRight1 = [player.block.matrix[0][3],player.block.matrix[1][3],player.block.matrix[2][3],player.block.matrix[3][3]];
+        let colRight2 = [player.block.matrix[0][2],player.block.matrix[1][2],player.block.matrix[2][2],player.block.matrix[3][2]];
+
+        if (player.position[0] <=0 && colLeft1.includes(1))
+            player.setPosition(0,player.position[1]);
+        else if (player.position[0] <=0 && colLeft2.includes(1))
+            player.setPosition(1,player.position[1]);
+
+        if (player.position[0]>=17 && colRight1.includes(1))
+            player.setPosition(16,player.position[1]);
+        else if (player.position[0]>=17 && colRight2.includes(1))
+            player.setPosition(17,player.position[1]);
     }
+
+    //Event listner
+   document.addEventListener("keydown",function(event){
+       event = event.key;
+       //console.log(player.position);
+       //update pastPosition
+       switch(event){
+           case "ArrowRight":
+               if (rigthAllowed())
+                    moveRight();
+               break;
+            case "ArrowLeft":
+                //console.log(tetris.width,"pos: ", player.position[0]);
+                if (leftAllowed())
+                    moveLeft();
+                break;
+            case "ArrowUp":
+                rotate();
+                break;
+            case "ArrowDown":
+                if (checkBlock())
+                    moveDown();
+                else{
+                    gridObjects. push ([new Block (player.block.matrix,player.block.color),player.position]);
+                    //generate a random block
+                    player.setBlock(nextBlock);
+                    nextBlock = blockElements[Math.floor(Math.random() * blockElements.length)];
+                    drawNextBlock(nextBlockBrush,nextBlock);
+                }
+                break;
+       }
+   });
 
    function checkBlock(){
        //check intersection between two blocks and 
