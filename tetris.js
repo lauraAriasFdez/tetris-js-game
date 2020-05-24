@@ -39,9 +39,9 @@ class Person{
 {
            //create matrix
            var matrixTetris = [];
-           for (var i =0; i<28;i++){
+           for (var i =0; i<32;i++){
                let row = [];
-               for (var j = 0; j<22;j++){
+               for (var j = 0; j<16;j++){
                   row.push(0);
                }
                matrixTetris.push(row);
@@ -64,8 +64,8 @@ class Person{
     /*main variables*/
     let tetris = document.getElementById("game-grid");
     let brush = tetris.getContext("2d");
-    brush.scale(15,6);
-    let player = new Person (8,0);
+    brush.scale(20,5);
+    let player = new Person (6,0);
     player.setBlock( blockElements[Math.floor(Math.random() * blockElements.length)]);
 
     /*next Block player will use*/
@@ -75,14 +75,36 @@ class Person{
     nextBlockBrush.scale(55,20);
     drawNextBlock(nextBlockBrush,nextBlock);
 
+    /*automatic down*/
+    let downAuto = setInterval(eventListener,500,"ArrowDown");
     
-    /*check available to move*/
-    function checkCollisionLeft (){
-        player.position[0]
-       return false;
+    function checkCollision(move){
+        matrix = player.block.matrix;
+        position = player.position;
+        positionToMove = position;
+        switch (move){
+            case ("left"):
+                positionToMove = [position[0]-1,position[1]];
+                break;
+            case ("right"):
+                positionToMove = [position[0]+1,position[1]];
+                break;
+            default:
+                positionToMove = [position[0],position[1]+1];
+                break;
+        }
+        for (let i = positionToMove[1]; i <matrix.length + positionToMove[1];i++){
+            for (let j =positionToMove[0]; j <matrix[i-positionToMove[1]].length + positionToMove[0];j++){
+               if (matrixTetris[i][j] == 1 && matrix [i-positionToMove[1]][j-positionToMove[0]]==1)
+                return true;
+            }
+        }
+        return false;
     }
+
+
     function leftAllowed(){
-        if (checkCollisionLeft())
+        if (checkCollision("left"))
              return false;
          else if (player.position[0]<=20 && player.position[0] >=1)
              return true;
@@ -98,43 +120,17 @@ class Person{
          }
     }
 
-    /*check collision for avilable moves*/
-    function checkCollisionRight (){
-        //if colRight1 includes 1 and color of object there 
-        return false;
-    }
-
-    function checkCollisionDown(){
-        matrix = player.block.matrix;
-        position = player.position;
-        positionToMove = [position[0],position[1]+1];
-        
-        //bounded by 0,20
-        // if tetris matrix has 1 and matrix block has one return true
-        // if tetris matrix has 1 and matrix block has all zeros return false
-        // if tetris matrix has all zeros return false
-        
-         
-        for (let i = positionToMove[1]; i <matrix.length + positionToMove[1];i++){
-            for (let j =positionToMove[0]; j <matrix[i-positionToMove[1]].length + positionToMove[0];j++){
-               if (matrixTetris[i][j] == 1 && matrix [i-positionToMove[1]][j-positionToMove[0]]==1)
-                return true;
-            }
-        }
-        return false;
-    }
-
     function rigthAllowed(){
-        if (checkCollisionRight())
+        if (checkCollision("right"))
             return false;
-        else if (player.position[0]<=15 && player.position[0] >=-1)
+        else if (player.position[0]<=10 && player.position[0] >=-1)
             return true;
         else {
             let colRight1 = [player.block.matrix[0][3],player.block.matrix[1][3],player.block.matrix[2][3],player.block.matrix[3][3]];
             let colRight2 = [player.block.matrix[0][2],player.block.matrix[1][2],player.block.matrix[2][2],player.block.matrix[3][2]];
-            if (player.position[0]==16 && !colRight1.includes(1))
+            if (player.position[0]==11 && !colRight1.includes(1))
                 return true;
-            else if (player.position[0]==17 && !colRight2.includes(1))
+            else if (player.position[0]==12 && !colRight2.includes(1))
                 return true;
             return false;
         }
@@ -145,13 +141,13 @@ class Person{
         let rowDown2 = [player.block.matrix[2][0],player.block.matrix[2][1],player.block.matrix[2][2],player.block.matrix[2][3]];
        //check intersection between two blocks and 
        //console.log(player.position);
-        if (checkCollisionDown())
+        if (checkCollision("down"))
             return false;
-        else if (player.position[1]<=20)
+        else if (player.position[1]<=25)
             return true;
-        else if (player.position[1]==21 && !rowDown1.includes(1))
+        else if (player.position[1]==26 && !rowDown1.includes(1))
             return true;
-        else if (player.position[1]==22 && !rowDown2.includes(1))
+        else if (player.position[1]==27 && !rowDown2.includes(1))
             return true;
         return false;
    }
@@ -184,7 +180,6 @@ class Person{
                 newgrid.push(row);
             } 
             //mutate block grid
-            player.block.matrix = newgrid;
 
         } else if (player.block.color!=="yellow"){
             // matrix N x N rotation but ignoring last col and top row which is always [0,0,0,0]
@@ -199,64 +194,79 @@ class Person{
                 row.push(0);
                 newgrid.push(row);
             } 
-            player.block.matrix = newgrid;
         }
-
+        
         //check if rotate moves block outside the grid on the left, right or down
-        let colLeft1 = [player.block.matrix[0][0],player.block.matrix[1][0],player.block.matrix[2][0],player.block.matrix[3][0]];
-        let colLeft2 = [player.block.matrix[0][1],player.block.matrix[1][1],player.block.matrix[2][1],player.block.matrix[3][1]];
-        let colRight1 = [player.block.matrix[0][3],player.block.matrix[1][3],player.block.matrix[2][3],player.block.matrix[3][3]];
-        let colRight2 = [player.block.matrix[0][2],player.block.matrix[1][2],player.block.matrix[2][2],player.block.matrix[3][2]];
-        let rowDown1=  [player.block.matrix[3][0],player.block.matrix[3][1],player.block.matrix[3][2],player.block.matrix[3][3]];
-        let rowDown2 = [player.block.matrix[2][0],player.block.matrix[2][1],player.block.matrix[2][2],player.block.matrix[2][3]];
+        let colLeft1 = [newgrid[0][0],newgrid[1][0],newgrid[2][0],newgrid[3][0]];
+        let colLeft2 = [newgrid[0][1],newgrid[1][1],newgrid[2][1],newgrid[3][1]];
+        let colRight1 = [newgrid[0][3],newgrid[1][3],newgrid[2][3],newgrid[3][3]];
+        let colRight2 = [newgrid[0][2],newgrid[1][2],newgrid[2][2],newgrid[3][2]];
+        let rowDown1=  [newgrid[3][0],newgrid[3][1],newgrid[3][2],newgrid[3][3]];
+        let rowDown2 = [newgrid[2][0],newgrid[2][1],newgrid[2][2],newgrid[2][3]];
 
-        if (player.position[0] <=0 && colLeft1.includes(1))
+        console.log(player.position);
+        if (player.position[0] <0 && colLeft1.includes(1))
             player.setPosition(0,player.position[1]);
-        else if (player.position[0] <=0 && colLeft2.includes(1))
-            player.setPosition(1,player.position[1]);
+        else if (player.position[0] <0 && colLeft2.includes(1))
+            player.setPosition(0,player.position[1]);
 
-        if (player.position[0]>=17 && colRight1.includes(1))
-            player.setPosition(16,player.position[1]);
-        else if (player.position[0]>=17 && colRight2.includes(1))
-            player.setPosition(17,player.position[1]);
+        if (player.position[0]>=12 && colRight1.includes(1))
+            player.setPosition(11,player.position[1]);
+        else if (player.position[0]>=12 && colRight2.includes(1))
+            player.setPosition(12,player.position[1]);
 
-        if (player.position[1]==21 && rowDown1.includes(1))
-            player.setPosition(player.position[0],21);
-        else if (player.position[1]==22 && rowDown2.includes(1))
-            player.setPosition(player.position[0],21);
+        if (player.position[1]==26 && rowDown1.includes(1))
+            player.setPosition(player.position[0],26);
+        else if (player.position[1]==27 && rowDown2.includes(1))
+            player.setPosition(player.position[0],26);
+
+    //check if rotate creates collision with pieces already there
+    let canRotate = true;
+    for (let i = player.position[1]; i <newgrid.length + player.position[1];i++){
+        for (let j =player.position[0]; j <newgrid[i-player.position[1]].length + player.position[0];j++){
+           if (matrixTetris[i][j] == 1 && newgrid [i-player.position[1]][j-player.position[0]]==1)
+                canRotate = false;
+        }
+    }
+        if (canRotate && newgrid!=[])
+            player.block.matrix = newgrid;
     }
 
     //Event listner
-   document.addEventListener("keydown",function(event){
-       event = event.key;
-       //update pastPosition
-       switch(event){
-           case "ArrowRight":
-               if (rigthAllowed())
-                    moveRight();
-               break;
-            case "ArrowLeft":
-                if (leftAllowed())
-                    moveLeft();
+    function eventListener(event){
+        //update pastPosition
+        switch(event){
+            case "ArrowRight":
+                if (rigthAllowed())
+                     moveRight();
                 break;
-            case "ArrowUp":
-                rotate();
-                break;
-            case "ArrowDown":
-                if (checkBlock())
-                    moveDown();
-                else{
-                    gridObjects. push ([new Block (player.block.matrix,player.block.color),player.position]);
-                    BlockIntoMatrix(player.block.matrix,player.position,matrixTetris);
-                    //generate a random block
-                    player.setBlock(nextBlock);
-                    player.setPosition(8,-1);
-                    nextBlock = blockElements[Math.floor(Math.random() * blockElements.length)];
-                    drawNextBlock(nextBlockBrush,nextBlock);
-                }
-                break;
-       }
-   });
+             case "ArrowLeft":
+                 if (leftAllowed())
+                     moveLeft();
+                 break;
+             case "ArrowUp":
+                 rotate();
+                 break;
+             case "ArrowDown":
+                 if (checkBlock())
+                     moveDown();
+                 else{
+                     gridObjects. push ([new Block (player.block.matrix,player.block.color),player.position]);
+                     BlockIntoMatrix(player.block.matrix,player.position,matrixTetris);
+                     //generate a random block
+                     player.setBlock(nextBlock);
+                     player.setPosition(8,-1);
+                     nextBlock = blockElements[Math.floor(Math.random() * blockElements.length)];
+                     drawNextBlock(nextBlockBrush,nextBlock);
+                 }
+                 break;
+        }
+    }
+    function eventListenerEvent (event){
+        event = event.key;
+        eventListener(event);
+    }
+   document.addEventListener("keydown",eventListenerEvent);
 
 
     function BlockIntoMatrix (matrix,position,matrixTetris){
@@ -270,8 +280,8 @@ class Person{
                     matrixTetris[i][j] = matrix[i-position[1]][j-position[0]];
             }
         }
-        //console.table(matrixTetris);
     }
+
     /*update grid*/
     
     animate();
@@ -291,7 +301,6 @@ class Person{
         draw();
         requestAnimationFrame(animate);
     }
-
     function drawNextBlock (nextBlockBrush,nextBlock){
         nextBlockBrush.fillStyle = "black";
         nextBlockBrush.fillRect (0,0,200,300);
@@ -306,21 +315,55 @@ class Person{
                 nextBlock.drawBlock (nextBlockBrush,[1.1,1.75]);
                 break;
         }
-       
+    }
+}
 
-       
-        
+
+    /* COLLISION MOVES
+    function checkCollisionRight (){
+        matrix = player.block.matrix;
+        position = player.position;
+        positionToMove = [position[0]+1,position[1]];
+        //if colRight1 includes 1 and color of object there 
+
+        for (let i = positionToMove[1]; i <matrix.length + positionToMove[1];i++){
+            for (let j =positionToMove[0]; j <matrix[i-positionToMove[1]].length + positionToMove[0];j++){
+               if (matrixTetris[i][j] == 1 && matrix [i-positionToMove[1]][j-positionToMove[0]]==1)
+                return true;
+            }
+        }
+        return false;
     }
 
+    function checkCollisionDown(){
+        matrix = player.block.matrix;
+        position = player.position;
+        positionToMove = [position[0],position[1]+1];
+        
+        //bounded by 0,20
+        // if tetris matrix has 1 and matrix block has one return true
+        // if tetris matrix has 1 and matrix block has all zeros return false
+        // if tetris matrix has all zeros return false
+        
+         
+        for (let i = positionToMove[1]; i <matrix.length + positionToMove[1];i++){
+            for (let j =positionToMove[0]; j <matrix[i-positionToMove[1]].length + positionToMove[0];j++){
+               if (matrixTetris[i][j] == 1 && matrix [i-positionToMove[1]][j-positionToMove[0]]==1)
+                return true;
+            }
+        }
+        return false;
+    }
 
-
-        //test, main methods
-    /*
-    player.block.drawBlock(brush,player.position);
-    console.log(player.block, player.position);
-    player.setPosition(10,10);
-    console.log(player.block, player.position);
-    player.block.drawBlock(brush,player.position);
-*/
-
-}
+    function checkCollisionLeft (){
+        matrix = player.block.matrix;
+        position = player.position;
+        positionToMove = [position[0]-1,position[1]];
+        for (let i = positionToMove[1]; i <matrix.length + positionToMove[1];i++){
+            for (let j =positionToMove[0]; j <matrix[i-positionToMove[1]].length + positionToMove[0];j++){
+               if (matrixTetris[i][j] == 1 && matrix [i-positionToMove[1]][j-positionToMove[0]]==1)
+                return true;
+            }
+        }
+        return false;
+    }*/
