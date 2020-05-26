@@ -38,12 +38,17 @@ class Person{
 /* GAAAAAMEEEE*/
 {
            //create matrix
+           var colorTetris = [];
            var matrixTetris = [];
+
            for (var i =0; i<32;i++){
                let row = [];
+               let rowColor = [];
                for (var j = 0; j<16;j++){
                   row.push(0);
+                  rowColor.push("black");
                }
+               colorTetris.push(rowColor);
                matrixTetris.push(row);
            }
     /*initialize variables and blocks matrix*/
@@ -59,8 +64,6 @@ class Person{
 
     /*gridObjects are the objects who have been position already*/
     let gridObjects = [];
-    //let gridMatrix = createMatrix(Number.parseInt(600/15),Number.parseInt(700/6));
-
     /*main variables*/
     let tetris = document.getElementById("game-grid");
     let brush = tetris.getContext("2d");
@@ -77,7 +80,7 @@ class Person{
 
     /*automatic down*/
     let downAuto = setInterval(eventListener,500,"ArrowDown");
-    
+
     function checkCollision(move){
         matrix = player.block.matrix;
         position = player.position;
@@ -151,6 +154,8 @@ class Person{
             return true;
         return false;
    }
+
+
     
        /*if postion [-1,19] and check columns that are not 0,0,0,0 and postion -2,20*/
    function moveDown(){
@@ -194,6 +199,8 @@ class Person{
                 row.push(0);
                 newgrid.push(row);
             } 
+        }else {
+            newgrid = player.block.matrix
         }
         
         //check if rotate moves block outside the grid on the left, right or down
@@ -204,7 +211,6 @@ class Person{
         let rowDown1=  [newgrid[3][0],newgrid[3][1],newgrid[3][2],newgrid[3][3]];
         let rowDown2 = [newgrid[2][0],newgrid[2][1],newgrid[2][2],newgrid[2][3]];
 
-        console.log(player.position);
         if (player.position[0] <0 && colLeft1.includes(1))
             player.setPosition(0,player.position[1]);
         else if (player.position[0] <0 && colLeft2.includes(1))
@@ -251,8 +257,8 @@ class Person{
                  if (checkBlock())
                      moveDown();
                  else{
-                     gridObjects. push ([new Block (player.block.matrix,player.block.color),player.position]);
-                     BlockIntoMatrix(player.block.matrix,player.position,matrixTetris);
+                     gridObjects. push ([new Block (player.block.matrix.slice(),player.block.color),player.position]);
+                     BlockIntoMatrix(player.block,player.position,matrixTetris);
                      //generate a random block
                      player.setBlock(nextBlock);
                      player.setPosition(8,-1);
@@ -269,31 +275,70 @@ class Person{
    document.addEventListener("keydown",eventListenerEvent);
 
 
-    function BlockIntoMatrix (matrix,position,matrixTetris){
+
+
+
+   function deleteFull(){
+       let rows = checkFullRow();
+        console.log(rows);
+       //update grid matrix
+       let row = [];
+       let colorRow = [];
+       for (let i =0; i<matrixTetris[0].length;i++){
+            row.push(0);
+            colorRow.push("black");
+       }
+       for (j = 0; j<rows.length;j++){
+           matrixTetris = matrixTetris.slice (0,rows[j]).concat(matrixTetris.slice(rows[j]+1,matrixTetris.length));
+           matrixTetris.unshift(row);
+           colorTetris = colorTetris.slice (0,rows[j]).concat(colorTetris.slice(rows[j]+1));
+           colorTetris.unshift(colorRow);
+       }
+   }
+    /*UPDATE grid objects*/
+    function checkFullRow (){
+        let indexToDel = [];
+        for (let i = 0; i<matrixTetris.length;i++){
+            row = [...matrixTetris[i]];
+            row.pop();
+            if (!row.includes(0)){
+                indexToDel.push(i);
+            }
+        }
+        return indexToDel;
+    }
+
+    function BlockIntoMatrix (block,position,matrixTetris){
+        matrix = block.matrix;
         if(position[1] == -1){
             console.log ("FINISH");
             return null;
         }    
         for (let i = position[1]; i <matrix.length + position[1];i++){
             for (let j = position[0]; j <matrix[i-position[1]].length + position[0];j++){
-                if (matrixTetris[i][j] == 0)
+                if (matrixTetris[i][j] == 0){
                     matrixTetris[i][j] = matrix[i-position[1]][j-position[0]];
+                    if (matrix[i-position[1]][j-position[0]] ==1)
+                        colorTetris[i][j] = block.color;
+                }
+                    
             }
         }
+        deleteFull();
     }
 
     /*update grid*/
     
     animate();
     
-    function draw (){
-        brush.fillStyle = "black";
-        brush.fillRect(0,0,tetris.width , tetris.height);
-        player.block.drawBlock(brush,player.position);
-
-        for (var i =0; i<gridObjects.length;i++){
-            gridObjects[i][0].drawBlock(brush,gridObjects[i][1]);
+    function draw (){      
+        for (var row =0; row< matrixTetris.length; row++){
+            for (var col = 0; col < matrixTetris[row].length; col++){
+                brush.fillStyle = colorTetris[row][col];
+                brush.fillRect(col,row,1,1);
+            }
         }
+        player.block.drawBlock(brush,player.position);
 
     }
 
@@ -302,11 +347,11 @@ class Person{
         requestAnimationFrame(animate);
     }
     function drawNextBlock (nextBlockBrush,nextBlock){
-        nextBlockBrush.fillStyle = "black";
+        nextBlockBrush.fillStyle = 'black';
         nextBlockBrush.fillRect (0,0,200,300);
         switch (nextBlock.color){
             case "cyan":
-                nextBlock.drawBlock (nextBlockBrush,[0.75,1.75]);
+                nextBlock.drawBlock (nextBlockBrush,[0,2]);
                 break;
             case "yellow":
                 nextBlock.drawBlock (nextBlockBrush,[1.60,1.75]);
@@ -317,53 +362,3 @@ class Person{
         }
     }
 }
-
-
-    /* COLLISION MOVES
-    function checkCollisionRight (){
-        matrix = player.block.matrix;
-        position = player.position;
-        positionToMove = [position[0]+1,position[1]];
-        //if colRight1 includes 1 and color of object there 
-
-        for (let i = positionToMove[1]; i <matrix.length + positionToMove[1];i++){
-            for (let j =positionToMove[0]; j <matrix[i-positionToMove[1]].length + positionToMove[0];j++){
-               if (matrixTetris[i][j] == 1 && matrix [i-positionToMove[1]][j-positionToMove[0]]==1)
-                return true;
-            }
-        }
-        return false;
-    }
-
-    function checkCollisionDown(){
-        matrix = player.block.matrix;
-        position = player.position;
-        positionToMove = [position[0],position[1]+1];
-        
-        //bounded by 0,20
-        // if tetris matrix has 1 and matrix block has one return true
-        // if tetris matrix has 1 and matrix block has all zeros return false
-        // if tetris matrix has all zeros return false
-        
-         
-        for (let i = positionToMove[1]; i <matrix.length + positionToMove[1];i++){
-            for (let j =positionToMove[0]; j <matrix[i-positionToMove[1]].length + positionToMove[0];j++){
-               if (matrixTetris[i][j] == 1 && matrix [i-positionToMove[1]][j-positionToMove[0]]==1)
-                return true;
-            }
-        }
-        return false;
-    }
-
-    function checkCollisionLeft (){
-        matrix = player.block.matrix;
-        position = player.position;
-        positionToMove = [position[0]-1,position[1]];
-        for (let i = positionToMove[1]; i <matrix.length + positionToMove[1];i++){
-            for (let j =positionToMove[0]; j <matrix[i-positionToMove[1]].length + positionToMove[0];j++){
-               if (matrixTetris[i][j] == 1 && matrix [i-positionToMove[1]][j-positionToMove[0]]==1)
-                return true;
-            }
-        }
-        return false;
-    }*/
