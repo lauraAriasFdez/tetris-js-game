@@ -40,17 +40,22 @@ class Person{
            //create matrix
            var colorTetris = [];
            var matrixTetris = [];
-
-           for (var i =0; i<32;i++){
-               let row = [];
-               let rowColor = [];
-               for (var j = 0; j<16;j++){
-                  row.push(0);
-                  rowColor.push("black");
-               }
-               colorTetris.push(rowColor);
-               matrixTetris.push(row);
-           }
+           createMatrix();
+        function createMatrix(){
+            colorTetris = [];
+            matrixTetris = [];
+            for (var i =0; i<32;i++){
+                let row = [];
+                let rowColor = [];
+                for (var j = 0; j<16;j++){
+                   row.push(0);
+                   rowColor.push("black");
+                }
+                colorTetris.push(rowColor);
+                matrixTetris.push(row);
+            }
+        }
+           
     /*initialize variables and blocks matrix*/
     let blockElements = [
         new Block ([[0,0,0,0],[0,0,1,0],[1,1,1,0],[0,0,0,0]],"orange"),
@@ -62,29 +67,52 @@ class Person{
         new Block ([[0,0,0,0],[1,0,0,0],[1,1,1,0],[0,0,0,0]],"pink")
     ];
 
-    /*gridObjects are the objects who have been position already*/
-    let gridObjects = [];
     /*main variables*/
     let tetris = document.getElementById("game-grid");
     let brush = tetris.getContext("2d");
     brush.scale(20,5);
     let player = new Person (6,0);
-    player.setBlock( blockElements[Math.floor(Math.random() * blockElements.length)]);
+    player.setBlock(blockElements[Math.floor(Math.random() * blockElements.length)]);
 
     /*next Block player will use*/
     let nextBlock = blockElements[Math.floor(Math.random() * blockElements.length)];
+    nextBlock.matrix = nextBlock.matrix.slice();
     let nextBlockDisplay = document.getElementById("piece");
     let nextBlockBrush = nextBlockDisplay.getContext("2d");
-    nextBlockBrush.scale(55,20);
+    nextBlockBrush.scale(40,30);
     drawNextBlock(nextBlockBrush,nextBlock);
+
+    /*variables needed to end and start the game */
+    let finish = document.getElementById("end");
+    let text = document.getElementById("text");
+    let pScore = document.getElementById("txt-score");
+    let lineTxt = document.getElementById("Num-lines");
+    let finalScore = document.getElementById("end-score");
+    let finalLines = document.getElementById("end-lines");
+    /*points*/
+    let points = 0;
+    let lines = 0;
 
     /*automatic down*/
     let downAuto = setInterval(eventListener,500,"ArrowDown");
 
+    /*
+    collision between two pieces before moving up down or left
+        - @move - represents the string "left", "right" or "down" which specifies the desire movement 
+
+        - returns true if they collide if object of player would to move, meaning the object cannot move
+        - returns false if the pieces do not collide, meaning you are allow to move in that direction
+        
+    */
     function checkCollision(move){
         matrix = player.block.matrix;
-        position = player.position;
+        position = player.position.slice();
         positionToMove = position;
+        //edge case when moving at start (too soon)
+        if (position[1]==-1)
+            positionToMove[1]=0;
+
+
         switch (move){
             case ("left"):
                 positionToMove = [position[0]-1,position[1]];
@@ -142,8 +170,7 @@ class Person{
     function checkBlock(){
         let rowDown1=  [player.block.matrix[3][0],player.block.matrix[3][1],player.block.matrix[3][2],player.block.matrix[3][3]];
         let rowDown2 = [player.block.matrix[2][0],player.block.matrix[2][1],player.block.matrix[2][2],player.block.matrix[2][3]];
-       //check intersection between two blocks and 
-       //console.log(player.position);
+       //check intersection between two blocks 
         if (checkCollision("down"))
             return false;
         else if (player.position[1]<=25)
@@ -228,10 +255,14 @@ class Person{
 
     //check if rotate creates collision with pieces already there
     let canRotate = true;
-    for (let i = player.position[1]; i <newgrid.length + player.position[1];i++){
-        for (let j =player.position[0]; j <newgrid[i-player.position[1]].length + player.position[0];j++){
-           if (matrixTetris[i][j] == 1 && newgrid [i-player.position[1]][j-player.position[0]]==1)
-                canRotate = false;
+    if (player.position[1]==-1)
+        canRotate = false;
+    else{
+        for (let i = player.position[1]; i <newgrid.length + player.position[1];i++){
+            for (let j =player.position[0]; j <newgrid[i-player.position[1]].length + player.position[0];j++){
+            if (matrixTetris[i][j] == 1 && newgrid [i-player.position[1]][j-player.position[0]]==1)
+                    canRotate = false;
+            }
         }
     }
         if (canRotate && newgrid!=[])
@@ -257,7 +288,6 @@ class Person{
                  if (checkBlock())
                      moveDown();
                  else{
-                     gridObjects. push ([new Block (player.block.matrix.slice(),player.block.color),player.position]);
                      BlockIntoMatrix(player.block,player.position,matrixTetris);
                      //generate a random block
                      player.setBlock(nextBlock);
@@ -280,7 +310,25 @@ class Person{
 
    function deleteFull(){
        let rows = checkFullRow();
-        console.log(rows);
+       //update lines deleted and points
+       lines+= rows.length;
+       switch (rows.length){
+           case 1:
+               points+= 40;
+               break;
+            case 2:
+                points +=100;
+                break;
+            case 3:
+                points+=300;
+                break;
+            case 4:
+                points+= 1200;
+                break;
+       }
+    
+       pScore.innerHTML = "SCORE : " + points;
+       lineTxt.innerHTML = "LINES : " + lines;
        //update grid matrix
        let row = [];
        let colorRow = [];
@@ -311,7 +359,7 @@ class Person{
     function BlockIntoMatrix (block,position,matrixTetris){
         matrix = block.matrix;
         if(position[1] == -1){
-            console.log ("FINISH");
+            endGame ();
             return null;
         }    
         for (let i = position[1]; i <matrix.length + position[1];i++){
@@ -336,6 +384,7 @@ class Person{
             for (var col = 0; col < matrixTetris[row].length; col++){
                 brush.fillStyle = colorTetris[row][col];
                 brush.fillRect(col,row,1,1);
+                
             }
         }
         player.block.drawBlock(brush,player.position);
@@ -346,19 +395,71 @@ class Person{
         draw();
         requestAnimationFrame(animate);
     }
+
+
     function drawNextBlock (nextBlockBrush,nextBlock){
         nextBlockBrush.fillStyle = 'black';
         nextBlockBrush.fillRect (0,0,200,300);
         switch (nextBlock.color){
             case "cyan":
-                nextBlock.drawBlock (nextBlockBrush,[0,2]);
+                nextBlock.drawBlock (nextBlockBrush,[2,0]);
                 break;
             case "yellow":
-                nextBlock.drawBlock (nextBlockBrush,[1.60,1.75]);
+                nextBlock.drawBlock (nextBlockBrush,[2.6,0.6]);
                 break;
             default:
-                nextBlock.drawBlock (nextBlockBrush,[1.1,1.75]);
+                nextBlock.drawBlock (nextBlockBrush,[2,.6]);
                 break;
         }
+    }
+
+
+
+    /*end game*/
+    let quitButton = document.getElementById("quit");
+    let pauseButton = document.getElementById("pause");
+    function pauseGame (){
+        if (pauseButton.innerHTML === "PAUSE"){
+            clearInterval(downAuto);
+            document.removeEventListener("keydown",eventListenerEvent);
+            tetris.style.opacity = 0.4;
+            nextBlockDisplay.style.opacity = 0.4;
+            pauseButton.innerHTML="RESUME";
+        }
+        else{
+            pauseButton.innerHTML = "PAUSE";
+            downAuto = setInterval(eventListener,500,"ArrowDown");
+            document.addEventListener("keydown", eventListenerEvent);
+            tetris.style.opacity = 1;
+            nextBlockDisplay.style.opacity = 1;
+        }
+    }
+    function playAgain(){
+        createMatrix();
+        player.setBlock( blockElements[Math.floor(Math.random() * blockElements.length)]);
+        nextBlock = blockElements[Math.floor(Math.random() * blockElements.length)];
+        downAuto = setInterval(eventListener,500,"ArrowDown");
+        document.addEventListener("keydown", eventListenerEvent);
+        finish.style.display = "none";
+        text.style.display = "block";
+        tetris.style.opacity = 1;
+        player.setPosition(6,0);
+        //playAgainButton.removeEventListener("click",playAgain);
+    }
+    function endGame (){
+        clearInterval(downAuto);
+        pauseButton.innerHTML = "PAUSE";
+        document.removeEventListener("keydown",eventListenerEvent);
+        tetris.style.opacity = 0.4;
+        /*finish screen*/
+        finalScore.innerHTML = "SCORE :" + points;
+        finalLines.innerHTML = "LINES: "+lines;
+        finish.style.display = "flex";
+        finish.style.justifyContent = "center";
+        finish.style.alignItems = "center";
+        text.style.display = "none";
+        
+        /*play again*/
+        //playAgainButton.onClick (playAgain);
     }
 }
