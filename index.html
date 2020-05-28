@@ -8,7 +8,7 @@
     <body>
         <!--also add event listner for pause with the space-->
         
-        <div id = "text">
+        <div id = "text" class="block">
             <div id="next-piece">  
                 <canvas id="piece"></canvas>
             </div>
@@ -23,20 +23,24 @@
                 <button id="quit" onclick="endGame()">QUIT</button>
                 <button id="pause" onclick="pauseGame()">PAUSE</button> 
             </header>
+        </div>
 
-    </div>
-     <div id="canvas-2">
+     <div id="canvas-2" class="block">
         <canvas id="game-grid">
 
         </canvas>
 
-        <div id = "end">
+        <div id = "end" class="start-end">
             <div>
             <h3>Game Over</h3>
             <p id="end-score"></p>
             <p id="end-lines"></p>
-            <button id = "play-again" onclick="playAgain()">Play Again</button>
+            <button class = "button"id = "play-again" onclick="playAgain()">Play Again</button>
             </div>
+        </div>
+
+        <div id="start" class="start-end">
+            <button id="start-button" class="button" onclick="startGame()">PLAY</button>
         </div>
     </div>
     <script src="tetris.js"></script>
